@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Notify } from 'notiflix';
 
 import Searchbar from './Searchbar/Searchbar';
@@ -45,30 +45,33 @@ const App = () => {
 
       fetchImages();
     }
-  }, [search, page, perPage, setLoading, getImages, setTotalHits, setImages]);
+  }, [search, page, perPage, setLoading, setTotalHits, setImages]);
 
-  const searchImages = formSearch => {
-    if (formSearch === search) {
-      return Notify.info('Enter a new request!');
-    }
-    setSearch(formSearch);
-    setPage(1);
-    setImages([]);
-  };
+  const searchImages = useCallback(
+    formSearch => {
+      if (formSearch === search) {
+        return Notify.info('Enter a new request!');
+      }
+      setSearch(formSearch);
+      setPage(1);
+      setImages([]);
+    },
+    [search]
+  );
 
-  const showImage = ({ largeImageURL }) => {
+  const showImage = useCallback(({ largeImageURL }) => {
     setShowModal(true);
     setLargeImage(largeImageURL);
-  };
+  }, []);
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     setPage(prevPage => prevPage + 1);
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false);
     setLargeImage('');
-  };
+  }, []);
 
   return (
     <div className={styles.App_container}>
