@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Notify } from 'notiflix';
 
 import Searchbar from './Searchbar/Searchbar';
@@ -13,102 +13,80 @@ import { getImages } from '../shared/services/images-api';
 
 import styles from './styles.module.css';
 
-class App extends Component {
-  state = {
-    images: [],
-    search: '',
-    page: 1,
-    perPage: 12,
-    totalHits: 0,
-    loading: false,
-    showModal: false,
-    largeImage: '',
-  };
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalHits, setTotalHits] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImage, setLargeImage] = useState('');
 
-  componentDidUpdate(prevProps, prevState) {
-    const { search, page } = this.state;
-    if (search !== prevState.search || page !== prevState.page) {
-      this.fetchImages();
+  let perPage = 12;
+
+  useEffect(() => {
+    if (search) {
+      const fetchImages = async () => {
+        try {
+          setLoading(true);
+          const data = await getImages(search, page, perPage);
+          const newImages = data.hits;
+          if (!newImages.length) {
+            return Notify.warning('No matches found. Try again!');
+          }
+          setTotalHits(data.totalHits);
+          setImages(prevImages => [...prevImages, ...newImages]);
+        } catch (error) {
+          Notify.failure(`ERROR: ${error.message}`);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchImages();
     }
-  }
+  }, [search, page, perPage]);
 
-  fetchImages = async () => {
-    try {
-      this.setState({ loading: true });
-      const { search, page, perPage } = this.state;
-      const data = await getImages(search, page, perPage);
-      const newImages = data.hits;
-
-      if (!newImages.length) {
-        return Notify.warning('No matches found. Try again!');
-      }
-
-      this.setState({
-        totalHits: data.totalHits,
-      });
-
-      this.setState(({ images }) => ({
-        images: [...images, ...newImages],
-      }));
-    } catch (error) {
-      Notify.failure(`ERROR: ${error.message}`);
-    } finally {
-      this.setState({ loading: false });
-    }
-  };
-
-  searchImages = ({ search }) => {
-    if (search === this.state.search) {
+  const searchImages = formSearch => {
+    if (formSearch === search) {
       return Notify.info('Enter a new request!');
     }
-    this.setState({
-      search,
-      images: [],
-      page: 1,
-    });
+    setSearch(formSearch);
+    setPage(1);
+    setImages([]);
   };
 
-  loadMore = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
+  const showImage = ({ largeImageURL }) => {
+    setShowModal(true);
+    setLargeImage(largeImageURL);
   };
 
-  showImage = ({ largeImageURL }) => {
-    this.setState({
-      showModal: true,
-      largeImage: largeImageURL,
-    });
+  const loadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  closeModal = () => {
-    this.setState({
-      showModal: false,
-      largeImage: '',
-    });
+  const closeModal = () => {
+    setShowModal(false);
+    setLargeImage('');
   };
 
-  render() {
-    const { images, loading, showModal, largeImage, totalHits, perPage, page } =
-      this.state;
-    const { searchImages, loadMore, showImage, closeModal } = this;
-
-    return (
-      <div className={styles.App_container}>
-        <Searchbar onSubmit={searchImages} />
-        <ImageGallery>
-          <ImageGalleryItem images={images} showImage={showImage} />
-        </ImageGallery>
-        {loading && <Loader />}
-        {Boolean(images.length) && totalHits / perPage > page && (
-          <Button loadMore={loadMore} />
-        )}
-        {showModal && (
-          <Modal close={closeModal}>
-            <LargeImage largeImageURL={largeImage} />
-          </Modal>
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={styles.App_container}>
+      <Searchbar onSubmit={searchImages} />
+      <ImageGallery>
+        <ImageGalleryItem images={images} showImage={showImage} />
+      </ImageGallery>
+      {loading && <Loader />}
+      {Boolean(images.length) && totalHits / perPage > page && (
+        <Button loadMore={loadMore} />
+      )}
+      {showModal && (
+        <Modal close={closeModal}>
+          <LargeImage largeImageURL={largeImage} />
+        </Modal>
+      )}
+    </div>
+  );
+};
 
 export default App;
