@@ -10,7 +10,7 @@ const Modal = ({ close, children }) => {
   useEffect(() => {
     document.addEventListener('keydown', closeModal);
     return document.removeEventListener('keydown', closeModal);
-  }, []);
+  }, [closeModal]);
 
   const closeModal = event => {
     if (event.target === event.currentTarget || event.code === 'Escape') {

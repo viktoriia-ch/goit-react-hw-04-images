@@ -45,7 +45,7 @@ const App = () => {
 
       fetchImages();
     }
-  }, [search, page, perPage]);
+  }, [search, page, perPage, setLoading, getImages, setTotalHits, setImages]);
 
   const searchImages = formSearch => {
     if (formSearch === search) {
