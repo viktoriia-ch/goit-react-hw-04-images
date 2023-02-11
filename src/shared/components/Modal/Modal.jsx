@@ -7,9 +7,9 @@ import styles from './modal.module.css';
 const modalRoot = document.querySelector('#modal-root');
 
 const Modal = ({ close, children }) => {
-  const closeModal = useCallback(
+  const closeModalByClickOnOverlay = useCallback(
     event => {
-      if (event.target === event.currentTarget || event.code === 'Escape') {
+      if (event.target === event.currentTarget) {
         close();
       }
     },
@@ -17,12 +17,19 @@ const Modal = ({ close, children }) => {
   );
 
   useEffect(() => {
-    document.addEventListener('keydown', closeModal);
-    return document.removeEventListener('keydown', closeModal);
-  }, [closeModal]);
+    const closeModalByClickOnEscape = event => {
+      if (event.code === 'Escape') {
+        close();
+      }
+    };
+    document.addEventListener('keydown', closeModalByClickOnEscape);
+
+    return () =>
+      document.removeEventListener('keydown', closeModalByClickOnEscape);
+  }, [close]);
 
   return createPortal(
-    <div className={styles.Overlay} onClick={closeModal}>
+    <div className={styles.Overlay} onClick={closeModalByClickOnOverlay}>
       <div className={styles.Modal}>{children}</div>
     </div>,
     modalRoot
